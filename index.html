@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PT readiness scorecard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F6F3EC;
+    --ink: #1D201C;
+    --ink-soft: #4A4D46;
+    --gray: #7A7D74;
+    --line: #DAD5C6;
+    --sage: #3F6B52;
+    --sage-dark: #2A4A38;
+    --sage-tint: #E7EFE8;
+    --amber: #B96E28;
+    --amber-tint: #F6EADC;
+    --red: #A33B2E;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height: 100%;
+  }
+  body { display: flex; align-items: center; justify-content: center; padding: 32px 16px; }
+  .card {
+    width: 100%; max-width: 460px;
+    background: #FFFFFF;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 36px 32px 30px;
+    min-height: 380px;
+    display: flex; flex-direction: column;
+  }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--sage); margin: 0 0 10px;
+  }
+  h1 {
+    font-family: 'Oswald', sans-serif; font-weight: 600;
+    font-size: 27px; line-height: 1.15; letter-spacing: 0.01em;
+    margin: 0 0 8px; color: var(--ink);
+  }
+  h2 {
+    font-family: 'Oswald', sans-serif; font-weight: 600;
+    font-size: 21px; line-height: 1.3;
+    margin: 0 0 20px; color: var(--ink);
+  }
+  .sub {
+    font-size: 14.5px; line-height: 1.55; color: var(--ink-soft);
+    margin: 0 0 20px; max-width: 36ch;
+  }
+  .pulse-wrap { height: 22px; margin: 0 0 22px; }
+  .pulse-wrap svg { display: block; width: 100%; height: 100%; }
+  .pulse-line {
+    fill: none; stroke: var(--sage); stroke-width: 1.6;
+    stroke-linecap: round; stroke-linejoin: round;
+    stroke-dasharray: 340; stroke-dashoffset: 340;
+    animation: draw 1.1s ease-out 0.15s forwards;
+  }
+  @media (prefers-reduced-motion: reduce) { .pulse-line { animation: none; stroke-dashoffset: 0; } }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+
+  .progress-track {
+    height: 4px; background: var(--line); border-radius: 3px;
+    margin: 0 0 22px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; background: var(--sage); border-radius: 3px;
+    transition: width 0.3s ease;
+  }
+
+  button.primary {
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px;
+    color: #FFFFFF; background: var(--sage); border: none;
+    border-radius: 7px; padding: 13px 16px; cursor: pointer;
+    transition: background 0.15s ease, transform 0.05s ease;
+    margin-top: auto;
+  }
+  button.primary:hover { background: var(--sage-dark); }
+  button.primary:active { transform: scale(0.99); }
+  button.primary:disabled { background: #B9C4BB; cursor: not-allowed; }
+  button.primary:focus-visible { outline: 2px solid var(--sage-dark); outline-offset: 2px; }
+
+  button.link {
+    font-family: 'Inter', sans-serif; font-size: 13px; color: var(--gray);
+    background: none; border: none; cursor: pointer; padding: 10px 0 0;
+    text-align: left; text-decoration: underline;
+  }
+
+  .options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 6px; }
+  .option {
+    font-family: 'Inter', sans-serif; font-size: 14.5px; color: var(--ink);
+    text-align: left; background: var(--paper); border: 1px solid var(--line);
+    border-radius: 7px; padding: 12px 14px; cursor: pointer;
+    transition: border-color 0.12s ease, background 0.12s ease;
+  }
+  .option:hover { border-color: var(--sage); }
+  .option.selected {
+    border-color: var(--sage); background: var(--sage-tint); font-weight: 500;
+  }
+
+  form { display: flex; flex-direction: column; gap: 14px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  label { font-size: 12.5px; font-weight: 500; color: var(--ink-soft); }
+  input {
+    font-family: 'Inter', sans-serif; font-size: 15px; color: var(--ink);
+    background: var(--paper); border: 1px solid var(--line);
+    border-radius: 7px; padding: 11px 12px; outline: none;
+    transition: border-color 0.15s ease;
+  }
+  input::placeholder { color: #A6A69A; }
+  input:focus { border-color: var(--sage); box-shadow: 0 0 0 3px var(--sage-tint); }
+  input.invalid { border-color: var(--red); }
+  .error-text { font-size: 12px; color: var(--red); min-height: 14px; margin: 0; }
+
+  .score-display { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+  .score-number {
+    font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 56px;
+    color: var(--sage-dark); line-height: 1;
+  }
+  .score-suffix { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 22px; color: var(--sage); }
+
+  .tier-pill {
+    display: inline-block; font-size: 12.5px; font-weight: 500;
+    color: var(--sage-dark); background: var(--sage-tint);
+    padding: 5px 12px; border-radius: 999px; margin: 4px 0 18px;
+  }
+
+  .lever-card {
+    background: var(--amber-tint); border-radius: 8px; padding: 14px 16px;
+    margin-bottom: 20px;
+  }
+  .lever-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--amber);
+    margin: 0 0 5px;
+  }
+  .lever-text { font-size: 14px; line-height: 1.5; color: var(--ink); margin: 0; }
+
+  .status-row {
+    display: flex; align-items: center; gap: 7px; margin-top: 16px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--gray);
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gray); flex-shrink: 0; transition: background 0.2s ease; }
+  .dot.ok { background: var(--sage); }
+  .dot.warn { background: var(--amber); }
+  .dot.err { background: var(--red); }
+</style>
+</head>
+<body>
+<div class="card" id="card"></div>
+
+<script>
+(function () {
+  const CATEGORIES = [
+    { id: 'frequency', label: 'Training frequency', weight: 3,
+      question: 'How many days a week do you currently train?',
+      options: ['0 days', '1–2 days', '3–4 days', '5+ days'],
+      lever: 'More consistent training days would compound fastest.' },
+    { id: 'nutrition', label: 'Nutrition consistency', weight: 3,
+      question: 'How consistent is your nutrition day to day?',
+      options: ['No real plan', 'Loose awareness', 'Mostly consistent', 'Dialed in and tracked'],
+      lever: 'Dialing in nutrition day-to-day is likely your fastest win.' },
+    { id: 'sleep', label: 'Sleep quality', weight: 2,
+      question: 'How many hours of quality sleep do you average?',
+      options: ['Under 5', '5–6', '7', '8+'],
+      lever: 'Better sleep would upgrade every other habit on this list.' },
+    { id: 'stress', label: 'Stress management', weight: 1,
+      question: 'How would you rate your stress levels lately?',
+      options: ['Constantly high', 'Often high', 'Manageable', 'Low and controlled'],
+      lever: 'Getting stress under control will unlock recovery and results.' },
+    { id: 'injury', label: 'Injury and pain history', weight: 2,
+      question: 'Any current injuries or pain limiting movement?',
+      options: ['Significant — limits most training', 'Some — limits certain movements', 'Minor — rarely an issue', 'None'],
+      lever: 'Addressing pain and limitations should come first.' },
+    { id: 'mobility', label: 'Mobility and flexibility', weight: 1,
+      question: 'How would you describe your mobility?',
+      options: ['Very limited', 'Somewhat limited', 'Decent', 'Excellent'],
+      lever: 'Improving mobility will make every session more effective.' },
+    { id: 'accountability', label: 'Accountability and support', weight: 2,
+      question: 'Do you have anyone keeping you accountable?',
+      options: ['No one', 'Occasional check-ins with a friend', 'Regular check-ins', 'A dedicated coach or training partner'],
+      lever: 'Real accountability is likely your missing piece.' },
+    { id: 'clarity', label: 'Goal clarity', weight: 1,
+      question: 'How clear are you on your specific goal?',
+      options: ["Not sure what I want", 'General idea', 'Fairly clear', 'Crystal clear with a target'],
+      lever: 'Getting specific on your goal will sharpen everything else.' },
+    { id: 'time', label: 'Time availability', weight: 2,
+      question: 'How much time can you realistically commit per week?',
+      options: ['Under 1 hour', '1–2 hours', '3–4 hours', '5+ hours'],
+      lever: 'Finding a bit more time each week changes the math.' },
+    { id: 'coaching', label: 'Past coaching experience', weight: 1,
+      question: 'Have you worked with a coach or trainer before?',
+      options: ['Never', "Once, didn't stick", 'Yes, some success', 'Yes, great results'],
+      lever: 'The right coaching relationship could be the difference this time.' }
+  ];
+
+  const TIERS = [
+    { max: 40, name: 'Foundation phase', copy: "You're at the starting line — a great place to build real momentum with the right guidance." },
+    { max: 65, name: 'Building momentum', copy: "You've got pieces in place. A structured plan will close the gaps fast." },
+    { max: 85, name: 'Strong contender', copy: "You're doing a lot right. The remaining gap is where a coach earns their keep." },
+    { max: 100, name: 'Elite ready', copy: "You're operating at a high level already — coaching now is about optimizing, not fixing." }
+  ];
+
+  const card = document.getElementById('card');
+  const state = { screen: 'intro', qIndex: 0, answers: new Array(CATEGORIES.length).fill(null), lead: null };
+
+  function pulseSvg() {
+    return '<div class="pulse-wrap" aria-hidden="true"><svg viewBox="0 0 400 22" preserveAspectRatio="none">' +
+      '<path class="pulse-line" d="M0,11 L120,11 L140,11 L152,2 L164,20 L176,4 L188,11 L400,11" /></svg></div>';
+  }
+
+  function render() {
+    if (state.screen === 'intro') return renderIntro();
+    if (state.screen === 'question') return renderQuestion();
+    if (state.screen === 'gate') return renderGate();
+    if (state.screen === 'reveal') return renderReveal();
+    if (state.screen === 'admin') return renderAdmin();
+  }
+
+  function renderIntro() {
+    card.innerHTML =
+      '<p class="eyebrow">PT scorecard</p>' +
+      '<h1>How ready are you, really?</h1>' +
+      '<p class="sub">Answer 10 quick questions and get a personalized readiness score, your tier, and the single biggest lever to pull next.</p>' +
+      pulseSvg() +
+      '<button class="primary" id="start-btn">Start scorecard</button>' +
+      '<button class="link" id="admin-link" style="margin-top:12px;">View submitted leads →</button>';
+    document.getElementById('start-btn').addEventListener('click', function () {
+      state.screen = 'question'; state.qIndex = 0; render();
+    });
+    document.getElementById('admin-link').addEventListener('click', function () {
+      state.screen = 'admin'; render();
+    });
+  }
+
+  async function renderAdmin() {
+    card.innerHTML =
+      '<p class="eyebrow">Leads (live)</p>' +
+      '<h1 style="font-size:22px;">Submitted responses</h1>' +
+      '<p class="sub" id="admin-status">Loading…</p>' +
+      '<div id="admin-list" style="display:flex; flex-direction:column; gap:10px; overflow-y:auto; max-height:340px; margin-bottom:16px;"></div>' +
+      '<button class="link" id="admin-refresh">Refresh</button>' +
+      '<button class="link" id="admin-back">Back</button>';
+
+    document.getElementById('admin-back').addEventListener('click', function () { state.screen = 'intro'; render(); });
+    document.getElementById('admin-refresh').addEventListener('click', renderAdmin);
+
+    const statusEl = document.getElementById('admin-status');
+    const listEl = document.getElementById('admin-list');
+
+    try {
+      const listResult = await window.storage.list('scorecard-leads:', true);
+      const keys = (listResult && listResult.keys) || [];
+      if (keys.length === 0) {
+        statusEl.textContent = 'No submissions yet.';
+        return;
+      }
+      const leads = [];
+      for (const key of keys) {
+        try {
+          const item = await window.storage.get(key, true);
+          if (item && item.value) leads.push(JSON.parse(item.value));
+        } catch (e) { /* skip unreadable entries */ }
+      }
+      leads.sort(function (a, b) { return new Date(b.submittedAt) - new Date(a.submittedAt); });
+
+      statusEl.textContent = leads.length + ' submission' + (leads.length === 1 ? '' : 's') + ' so far.';
+      listEl.innerHTML = leads.map(function (lead, idx) {
+        const when = new Date(lead.submittedAt).toLocaleString();
+        const answersHtml = (lead.answers || []).map(function (a) {
+          return '<div style="display:flex; justify-content:space-between; gap:10px; padding:4px 0; border-top:1px solid var(--line);">' +
+            '<span style="font-size:12px; color:var(--ink-soft);">' + a.label + '</span>' +
+            '<span style="font-size:12px; font-weight:500; text-align:right;">' + a.answer + '</span>' +
+            '</div>';
+        }).join('');
+        return '<div style="border:1px solid var(--line); border-radius:7px; padding:10px 12px;">' +
+          '<p style="margin:0 0 3px; font-weight:500; font-size:14px;">' + lead.name + '</p>' +
+          '<p style="margin:0 0 3px; font-size:12.5px; color:var(--ink-soft);">' + lead.email + ' · ' + lead.phone + '</p>' +
+          '<p style="margin:0 0 3px; font-size:12.5px; color:var(--sage-dark);">Score ' + lead.scorePercent + '% · ' + lead.tier + '</p>' +
+          '<p style="margin:0 0 6px; font-size:11.5px; color:var(--gray); font-family:\'JetBrains Mono\',monospace;">' + when + '</p>' +
+          (lead.answers ? '<button type="button" class="link" data-toggle="' + idx + '" style="padding:2px 0; font-size:12px;">View answers</button>' +
+          '<div id="answers-' + idx + '" style="display:none; margin-top:6px;">' + answersHtml + '</div>' : '') +
+        '</div>';
+      }).join('');
+
+      listEl.querySelectorAll('[data-toggle]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const panel = document.getElementById('answers-' + btn.getAttribute('data-toggle'));
+          const isOpen = panel.style.display === 'block';
+          panel.style.display = isOpen ? 'none' : 'block';
+          btn.textContent = isOpen ? 'View answers' : 'Hide answers';
+        });
+      });
+    } catch (err) {
+      statusEl.textContent = "Couldn't load submissions — try refresh.";
+    }
+  }
+
+  function renderQuestion() {
+    const i = state.qIndex;
+    const cat = CATEGORIES[i];
+    const selected = state.answers[i];
+    const pct = ((i + 1) / CATEGORIES.length) * 100;
+
+    let optionsHtml = '';
+    cat.options.forEach(function (opt, idx) {
+      const score = idx + 1;
+      const cls = selected === score ? 'option selected' : 'option';
+      optionsHtml += '<button type="button" class="' + cls + '" data-score="' + score + '">' + opt + '</button>';
+    });
+
+    card.innerHTML =
+      '<p class="eyebrow">Question ' + (i + 1) + ' of ' + CATEGORIES.length + '</p>' +
+      '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div>' +
+      '<h2>' + cat.question + '</h2>' +
+      '<div class="options">' + optionsHtml + '</div>' +
+      (i > 0 ? '<button class="link" id="back-btn">Back</button>' : '') +
+      '<button class="primary" id="next-btn" ' + (selected ? '' : 'disabled') + ' style="margin-top:18px;">' +
+      (i === CATEGORIES.length - 1 ? 'See my results' : 'Next') + '</button>';
+
+    card.querySelectorAll('.option').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        state.answers[i] = parseInt(btn.getAttribute('data-score'), 10);
+        renderQuestion();
+      });
+    });
+
+    const nextBtn = document.getElementById('next-btn');
+    nextBtn.addEventListener('click', function () {
+      if (state.answers[i] == null) return;
+      if (i === CATEGORIES.length - 1) {
+        state.screen = 'gate';
+      } else {
+        state.qIndex += 1;
+      }
+      render();
+    });
+
+    const backBtn = document.getElementById('back-btn');
+    if (backBtn) backBtn.addEventListener('click', function () { state.qIndex -= 1; render(); });
+  }
+
+  function renderGate() {
+    card.innerHTML =
+      '<p class="eyebrow">Almost there</p>' +
+      '<h1>Get your results</h1>' +
+      '<p class="sub">Enter your details to see your personalized score and biggest lever.</p>' +
+      '<form id="lead-form" novalidate>' +
+        '<div class="field"><label for="name">Full name</label>' +
+        '<input id="name" type="text" placeholder="Alex Morgan" autocomplete="name" />' +
+        '<p class="error-text" id="name-error"></p></div>' +
+        '<div class="field"><label for="email">Email</label>' +
+        '<input id="email" type="email" placeholder="alex@email.com" autocomplete="email" />' +
+        '<p class="error-text" id="email-error"></p></div>' +
+        '<div class="field"><label for="phone">Phone</label>' +
+        '<input id="phone" type="tel" placeholder="0400 000 000" autocomplete="tel" />' +
+        '<p class="error-text" id="phone-error"></p></div>' +
+        '<button type="submit" class="primary" id="gate-submit">See my results</button>' +
+      '</form>';
+
+    const form = document.getElementById('lead-form');
+    const fields = { name: document.getElementById('name'), email: document.getElementById('email'), phone: document.getElementById('phone') };
+    const errors = { name: document.getElementById('name-error'), email: document.getElementById('email-error'), phone: document.getElementById('phone-error') };
+    const submitBtn = document.getElementById('gate-submit');
+
+    function validate() {
+      let ok = true;
+      Object.keys(fields).forEach(function (k) { fields[k].classList.remove('invalid'); errors[k].textContent = ''; });
+
+      const name = fields.name.value.trim();
+      if (!name) { errors.name.textContent = 'Enter your name.'; fields.name.classList.add('invalid'); ok = false; }
+
+      const email = fields.email.value.trim();
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errors.email.textContent = 'Enter a valid email.'; fields.email.classList.add('invalid'); ok = false; }
+
+      const phone = fields.phone.value.trim();
+      if (!phone || phone.replace(/\D/g, '').length < 6) { errors.phone.textContent = 'Enter a valid phone number.'; fields.phone.classList.add('invalid'); ok = false; }
+
+      return ok;
+    }
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      if (!validate()) return;
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving…';
+
+      const results = computeResults(state.answers);
+      const answerBreakdown = CATEGORIES.map(function (cat, i) {
+        const score = state.answers[i];
+        return { label: cat.label, answer: cat.options[score - 1] };
+      });
+      const lead = {
+        id: (crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(16).slice(2)),
+        name: fields.name.value.trim(),
+        email: fields.email.value.trim(),
+        phone: fields.phone.value.trim(),
+        submittedAt: new Date().toISOString(),
+        scorePercent: results.percent,
+        tier: results.tier.name,
+        biggestLever: results.leverCategory.label,
+        answers: answerBreakdown
+      };
+      state.lead = lead;
+      state.results = results;
+
+      try {
+        await saveLeadLocally(lead);
+        state.screen = 'reveal';
+        render();
+        syncSheetInBackground(lead);
+      } catch (err) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'See my results';
+        errors.phone.textContent = errors.phone.textContent || "Couldn't save — try again.";
+      }
+    });
+  }
+
+  function computeResults(answers) {
+    let total = 0, max = 0;
+    let worstRatio = Infinity, worstIdx = 0;
+    CATEGORIES.forEach(function (cat, i) {
+      const score = answers[i] || 1;
+      total += score * cat.weight;
+      max += 4 * cat.weight;
+      const ratio = score / 4;
+      if (ratio < worstRatio || (ratio === worstRatio && cat.weight > CATEGORIES[worstIdx].weight)) {
+        worstRatio = ratio; worstIdx = i;
+      }
+    });
+    const percent = Math.round((total / max) * 100);
+    const tier = TIERS.find(function (t) { return percent <= t.max; }) || TIERS[TIERS.length - 1];
+    return { percent: percent, tier: tier, leverCategory: CATEGORIES[worstIdx] };
+  }
+
+  async function saveLeadLocally(lead) {
+    const key = 'scorecard-leads:' + lead.id;
+    const result = await window.storage.set(key, JSON.stringify(lead), true);
+    if (!result) throw new Error('storage returned no result');
+    return result;
+  }
+
+  function extractJson(text) {
+    const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const start = cleaned.indexOf('{');
+    const end = cleaned.lastIndexOf('}');
+    if (start === -1 || end === -1) throw new Error('no json found');
+    return JSON.parse(cleaned.slice(start, end + 1));
+  }
+
+  async function syncSheetInBackground(lead) {
+    const dot = document.getElementById('sync-dot');
+    const text = document.getElementById('sync-text');
+    if (dot) { dot.className = 'dot warn'; }
+    if (text) { text.textContent = 'Syncing to Google Sheet…'; }
+
+    try {
+      const answersSummary = lead.answers.map(function (a) { return a.label + ': ' + a.answer; }).join(' | ');
+      const prompt = [
+        'You have access to a Google Drive MCP connector. Do the following:',
+        '1. Search the user\'s Drive for a Google Sheet whose title is exactly "PT Scorecard Leads".',
+        '2. If it exists: read its current content, then create an updated version of the same file (same title "PT Scorecard Leads") whose content is the existing rows plus one new row appended with this lead\'s data: Name = ' + lead.name + ', Email = ' + lead.email + ', Phone = ' + lead.phone + ', Score = ' + lead.scorePercent + '%, Tier = ' + lead.tier + ', Biggest lever = ' + lead.biggestLever + ', Submitted at = ' + lead.submittedAt + ', Answers = ' + answersSummary + '.',
+        '3. If it does not exist: create a new Google Sheet titled exactly "PT Scorecard Leads" with a header row (Name, Email, Phone, Score, Tier, Biggest lever, Submitted at, Answers) followed by this lead as the first data row.',
+        'Respond with ONLY a compact JSON object and nothing else, no code fences, no commentary: {"success": true or false, "action": "created" or "appended" or "none", "message": "short explanation"}'
+      ].join(' ');
+
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }],
+          mcp_servers: [{ type: 'url', url: 'https://drivemcp.googleapis.com/mcp/v1', name: 'google-drive' }]
+        })
+      });
+
+      const data = await response.json();
+      const textBlocks = (data.content || []).filter(function (item) { return item.type === 'text'; }).map(function (item) { return item.text; }).join('\n');
+      const parsed = extractJson(textBlocks);
+      if (!parsed || parsed.success !== true) throw new Error('sync did not confirm success');
+
+      if (dot) dot.className = 'dot ok';
+      if (text) text.textContent = 'Saved';
+    } catch (err) {
+      if (dot) dot.className = 'dot warn';
+      if (text) text.textContent = 'Saved locally';
+    }
+  }
+
+  function renderReveal() {
+    const r = state.results;
+    card.innerHTML =
+      '<p class="eyebrow">Your results</p>' +
+      '<div class="score-display"><span class="score-number" id="score-num">0</span><span class="score-suffix">%</span></div>' +
+      '<span class="tier-pill">' + r.tier.name + '</span>' +
+      '<p class="sub">' + r.tier.copy + '</p>' +
+      '<div class="lever-card"><p class="lever-label">Your biggest lever</p>' +
+      '<p class="lever-text"><strong>' + r.leverCategory.label + '.</strong> ' + r.leverCategory.lever + '</p></div>' +
+      '<button class="primary" id="cta-btn">Book my free consultation</button>' +
+      '<div class="status-row"><span class="dot ok" id="sync-dot"></span><span id="sync-text">Saved</span></div>';
+
+    document.getElementById('cta-btn').addEventListener('click', function () {
+      alert('Placeholder: swap this for your booking link, email, or SMS action.');
+    });
+
+    const numEl = document.getElementById('score-num');
+    const target = r.percent;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) {
+      numEl.textContent = target;
+    } else {
+      const duration = 900;
+      const start = performance.now();
+      function step(now) {
+        const t = Math.min(1, (now - start) / duration);
+        const eased = 1 - Math.pow(1 - t, 3);
+        numEl.textContent = Math.round(eased * target);
+        if (t < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
