@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PT Results Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F6F3EC;
+    --ink: #1D201C;
+    --ink-soft: #4A4D46;
+    --gray: #7A7D74;
+    --line: #DAD5C6;
+    --sage: #3F6B52;
+    --sage-dark: #2A4A38;
+    --sage-tint: #E7EFE8;
+    --amber: #B96E28;
+    --amber-tint: #F6EADC;
+    --red: #A33B2E;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height: 100vh;
+  }
+  body { padding: 40px 20px; }
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  h1 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 32px;
+    font-weight: 600;
+    margin: 0 0 8px;
+    color: var(--ink);
+  }
+  .subtitle {
+    color: var(--ink-soft);
+    margin: 0 0 32px;
+    font-size: 16px;
+  }
+  .controls {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  button {
+    padding: 12px 20px;
+    background: var(--sage);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    font-family: 'Inter', sans-serif;
+  }
+  button:hover {
+    background: var(--sage-dark);
+  }
+  button.secondary {
+    background: #f0f0f0;
+    color: var(--ink);
+  }
+  button.secondary:hover {
+    background: #e0e0e0;
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .stat-card {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+    text-align: center;
+  }
+  .stat-number {
+    font-family: 'Oswald', sans-serif;
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--sage);
+    margin: 0;
+  }
+  .stat-label {
+    font-size: 13px;
+    color: var(--gray);
+    margin: 8px 0 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .table-wrapper {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  th {
+    background: var(--paper);
+    padding: 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--ink-soft);
+    border-bottom: 2px solid var(--line);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  tr:hover {
+    background: var(--paper);
+  }
+  tr:last-child td {
+    border-bottom: none;
+  }
+  .score-badge {
+    display: inline-block;
+    background: var(--sage-tint);
+    color: var(--sage-dark);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12px;
+  }
+  .tier-badge {
+    display: inline-block;
+    background: var(--amber-tint);
+    color: var(--amber);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 12px;
+  }
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--gray);
+  }
+  .empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+  }
+  .email-form {
+    background: var(--amber-tint);
+    border: 1px solid #E8D4B8;
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 32px;
+  }
+  .form-group {
+    margin-bottom: 16px;
+  }
+  .form-group:last-child {
+    margin-bottom: 0;
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--amber);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+  }
+  input {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid #E8D4B8;
+    border-radius: 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    background: white;
+    outline: none;
+  }
+  input:focus {
+    border-color: var(--amber);
+    box-shadow: 0 0 0 3px rgba(185, 110, 40, 0.1);
+  }
+  .success-message {
+    background: var(--sage-tint);
+    border: 1px solid var(--sage);
+    color: var(--sage-dark);
+    padding: 14px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 13px;
+  }
+  .error-message {
+    background: #FEE2E2;
+    border: 1px solid #FECACA;
+    color: #991B1B;
+    padding: 14px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 13px;
+  }
+  .expandable-row {
+    cursor: pointer;
+  }
+  .expandable-row:hover {
+    background: var(--paper);
+  }
+  .expand-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--sage);
+    font-weight: 600;
+    padding: 0;
+    font-size: 14px;
+  }
+  .details-row {
+    display: none;
+  }
+  .details-row.open {
+    display: table-row;
+  }
+  .details-cell {
+    padding: 20px 16px;
+    background: var(--paper);
+  }
+  .answers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 12px;
+  }
+  .answer-item {
+    background: white;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    font-size: 13px;
+  }
+  .answer-label {
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-bottom: 4px;
+  }
+  .answer-value {
+    color: var(--ink);
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📊 PT Results Dashboard</h1>
+  <p class="subtitle">Manage and review all client scorecard submissions</p>
+
+  <div class="email-form">
+    <h3 style="margin-top: 0; color: var(--amber); font-family: 'Oswald', sans-serif; font-size: 16px;">⚙️ Setup Email Notifications</h3>
+    <p style="margin: 0 0 20px; color: var(--amber); font-size: 13px;">Enter your email to receive submissions via Webhook. Copy this URL and add it to your form settings or Zapier:</p>
+    <div class="form-group">
+      <label>Your Email Address</label>
+      <input type="email" id="email-input" placeholder="your-email@example.com" />
+    </div>
+    <div class="form-group">
+      <label>Webhook URL (for form integrations)</label>
+      <input type="text" id="webhook-url" readonly placeholder="Click 'Generate Webhook' to create" />
+    </div>
+    <button onclick="generateWebhook()">Generate Webhook URL</button>
+    <button class="secondary" onclick="copyWebhookUrl()">Copy URL</button>
+    <p style="margin: 12px 0 0; font-size: 12px; color: var(--amber); opacity: 0.8;">Paste this URL into your form backend, Zapier, or webhook service to auto-send submissions to your email.</p>
+  </div>
+
+  <div id="message-container"></div>
+
+  <div class="controls">
+    <button onclick="loadResults()">🔄 Refresh Results</button>
+    <button class="secondary" onclick="exportCSV()">📥 Export CSV</button>
+    <button class="secondary" onclick="clearAllResults()">🗑️ Clear All</button>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <p class="stat-number" id="total-count">0</p>
+      <p class="stat-label">Total Submissions</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-number" id="avg-score">0</p>
+      <p class="stat-label">Average Score</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-number" id="high-priority">0</p>
+      <p class="stat-label">Needing Coaching</p>
+    </div>
+  </div>
+
+  <div class="table-wrapper">
+    <table id="results-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Score</th>
+          <th>Tier</th>
+          <th>Biggest Lever</th>
+          <th>Submitted</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="results-body">
+        <tr><td colspan="8" style="text-align: center; padding: 40px; color: var(--gray);">Loading results...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+(function () {
+  const STORAGE_KEY = 'pt-scorecard-results';
+
+  // Load results from localStorage
+  function loadResults() {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const results = stored ? JSON.parse(stored) : [];
+    renderTable(results);
+    updateStats(results);
+  }
+
+  // Save results to localStorage
+  function saveResults(results) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(results));
+  }
+
+  // Generate webhook URL
+  function generateWebhook() {
+    const email = document.getElementById('email-input').value.trim();
+    if (!email) {
+      showMessage('Please enter your email address.', 'error');
+      return;
+    }
+    
+    const webhookUrl = `https://gowithkova.github.io/pt-readiness-scorecard-general-pre-consult/webhook.html?email=${encodeURIComponent(email)}`;
+    document.getElementById('webhook-url').value = webhookUrl;
+    showMessage('✅ Webhook URL generated! Copy and paste it into your form settings.', 'success');
+  }
+
+  // Copy webhook URL
+  function copyWebhookUrl() {
+    const webhookUrl = document.getElementById('webhook-url').value;
+    if (!webhookUrl) {
+      showMessage('Generate a webhook URL first.', 'error');
+      return;
+    }
+    navigator.clipboard.writeText(webhookUrl);
+    showMessage('✅ Webhook URL copied to clipboard!', 'success');
+  }
+
+  // Show message
+  function showMessage(text, type) {
+    const container = document.getElementById('message-container');
+    const className = type === 'success' ? 'success-message' : 'error-message';
+    container.innerHTML = `<div class="${className}">${text}</div>`;
+    setTimeout(() => { container.innerHTML = ''; }, 4000);
+  }
+
+  // Render table
+  function renderTable(results) {
+    const tbody = document.getElementById('results-body');
+    
+    if (results.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 60px 20px; color: var(--gray);">📭 No submissions yet. Share the scorecard link with your clients!</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = results.map((result, idx) => {
+      const date = new Date(result.submittedAt).toLocaleDateString();
+      const expandId = `expand-${idx}`;
+      return `
+        <tr class="expandable-row" onclick="toggleDetails('${expandId}')">
+          <td><strong>${escapeHtml(result.name)}</strong></td>
+          <td>${escapeHtml(result.email)}</td>
+          <td>${escapeHtml(result.phone)}</td>
+          <td><span class="score-badge">${result.scorePercent}%</span></td>
+          <td><span class="tier-badge">${escapeHtml(result.tier)}</span></td>
+          <td style="font-size: 13px; color: var(--ink-soft);">${escapeHtml(result.biggestLever)}</td>
+          <td style="font-size: 13px; color: var(--gray);">${date}</td>
+          <td><button class="expand-btn" onclick="event.stopPropagation(); toggleDetails('${expandId}')">▼</button></td>
+        </tr>
+        <tr class="details-row" id="${expandId}">
+          <td colspan="8">
+            <div class="details-cell">
+              <h4 style="margin-top: 0; color: var(--ink);">Full Responses</h4>
+              <div class="answers-grid">
+                ${(result.answers || []).map(a => `
+                  <div class="answer-item">
+                    <div class="answer-label">${escapeHtml(a.label)}</div>
+                    <div class="answer-value">${escapeHtml(a.answer)}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // Toggle details
+  window.toggleDetails = function(id) {
+    const row = document.getElementById(id);
+    row.classList.toggle('open');
+  };
+
+  // Update stats
+  function updateStats(results) {
+    document.getElementById('total-count').textContent = results.length;
+    
+    const avgScore = results.length > 0
+      ? Math.round(results.reduce((sum, r) => sum + r.scorePercent, 0) / results.length)
+      : 0;
+    document.getElementById('avg-score').textContent = avgScore + '%';
+
+    const needsCoaching = results.filter(r => r.scorePercent < 50).length;
+    document.getElementById('high-priority').textContent = needsCoaching;
+  }
+
+  // Export CSV
+  window.exportCSV = function() {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const results = stored ? JSON.parse(stored) : [];
+    
+    if (results.length === 0) {
+      showMessage('No results to export.', 'error');
+      return;
+    }
+
+    const headers = ['Name', 'Email', 'Phone', 'Score', 'Tier', 'Biggest Lever', 'Submitted', 'Full Answers'];
+    const rows = results.map(r => [
+      r.name,
+      r.email,
+      r.phone,
+      r.scorePercent + '%',
+      r.tier,
+      r.biggestLever,
+      new Date(r.submittedAt).toLocaleString(),
+      (r.answers || []).map(a => a.label + ': ' + a.answer).join(' | ')
+    ]);
+
+    const csv = [headers, ...rows]
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'pt-scorecard-results.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+    showMessage('✅ CSV exported successfully!', 'success');
+  };
+
+  // Clear all
+  window.clearAllResults = function() {
+    if (confirm('Delete all results? This cannot be undone.')) {
+      localStorage.removeItem(STORAGE_KEY);
+      loadResults();
+      showMessage('All results cleared.', 'success');
+    }
+  };
+
+  // Add new result (called from webhook or form)
+  window.addResult = function(result) {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const results = stored ? JSON.parse(stored) : [];
+    results.unshift({
+      id: Date.now() + '-' + Math.random().toString(16).slice(2),
+      ...result,
+      submittedAt: new Date().toISOString()
+    });
+    saveResults(results);
+    loadResults();
+  };
+
+  // Escape HTML
+  function escapeHtml(text) {
+    const map = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    };
+    return String(text).replace(/[&<>"']/g, m => map[m]);
+  }
+
+  // Initialize
+  loadResults();
+})();
+</script>
+</body>
+</html>
