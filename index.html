@@ -96,6 +96,11 @@
     background: none; border: none; cursor: pointer; padding: 10px 0 0;
     text-align: left; text-decoration: underline;
   }
+  button.link:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    text-decoration: none;
+  }
 
   .options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 6px; }
   .option {
@@ -155,10 +160,57 @@
   .dot.ok { background: var(--sage); }
   .dot.warn { background: var(--amber); }
   .dot.err { background: var(--red); }
+
+  .admin-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  .admin-modal.open {
+    display: flex;
+  }
+  .admin-modal-content {
+    background: white;
+    border-radius: var(--radius);
+    padding: 30px;
+    max-width: 400px;
+    width: 90%;
+  }
+  .admin-modal h2 {
+    margin-top: 0;
+  }
+  .modal-close {
+    float: right;
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: var(--gray);
+  }
 </style>
 </head>
 <body>
 <div class="card" id="card"></div>
+
+<div class="admin-modal" id="admin-modal">
+  <div class="admin-modal-content">
+    <button class="modal-close" onclick="closeAdminModal()">×</button>
+    <h2 style="margin-bottom: 20px;">Admin Access</h2>
+    <p style="color: var(--ink-soft); margin-bottom: 20px;">Enter your admin code to view submitted leads:</p>
+    <div style="display: flex; gap: 10px;">
+      <input type="password" id="admin-code-input" placeholder="Enter code" style="flex: 1;" />
+      <button class="primary" onclick="checkAdminCode()">Access</button>
+    </div>
+    <p id="admin-error" style="color: var(--red); font-size: 12px; margin-top: 10px;"></p>
+  </div>
+</div>
 
 <script>
 (function () {
@@ -212,6 +264,8 @@
     { max: 100, name: 'Elite ready', copy: "You're operating at a high level already — coaching now is about optimizing, not fixing." }
   ];
 
+  const ADMIN_CODE = '1234'; // Change this to your desired code
+
   const card = document.getElementById('card');
   const state = { screen: 'intro', qIndex: 0, answers: new Array(CATEGORIES.length).fill(null), lead: null };
 
@@ -225,7 +279,6 @@
     if (state.screen === 'question') return renderQuestion();
     if (state.screen === 'gate') return renderGate();
     if (state.screen === 'reveal') return renderReveal();
-    if (state.screen === 'admin') return renderAdmin();
   }
 
   function renderIntro() {
@@ -234,77 +287,10 @@
       '<h1>How ready are you, really?</h1>' +
       '<p class="sub">Answer 10 quick questions and get a personalized readiness score, your tier, and the single biggest lever to pull next.</p>' +
       pulseSvg() +
-      '<button class="primary" id="start-btn">Start scorecard</button>' +
-      '<button class="link" id="admin-link" style="margin-top:12px;">View submitted leads →</button>';
+      '<button class="primary" id="start-btn">Start scorecard</button>';
     document.getElementById('start-btn').addEventListener('click', function () {
       state.screen = 'question'; state.qIndex = 0; render();
     });
-    document.getElementById('admin-link').addEventListener('click', function () {
-      state.screen = 'admin'; render();
-    });
-  }
-
-  async function renderAdmin() {
-    card.innerHTML =
-      '<p class="eyebrow">Leads (live)</p>' +
-      '<h1 style="font-size:22px;">Submitted responses</h1>' +
-      '<p class="sub" id="admin-status">Loading…</p>' +
-      '<div id="admin-list" style="display:flex; flex-direction:column; gap:10px; overflow-y:auto; max-height:340px; margin-bottom:16px;"></div>' +
-      '<button class="link" id="admin-refresh">Refresh</button>' +
-      '<button class="link" id="admin-back">Back</button>';
-
-    document.getElementById('admin-back').addEventListener('click', function () { state.screen = 'intro'; render(); });
-    document.getElementById('admin-refresh').addEventListener('click', renderAdmin);
-
-    const statusEl = document.getElementById('admin-status');
-    const listEl = document.getElementById('admin-list');
-
-    try {
-      const listResult = await window.storage.list('scorecard-leads:', true);
-      const keys = (listResult && listResult.keys) || [];
-      if (keys.length === 0) {
-        statusEl.textContent = 'No submissions yet.';
-        return;
-      }
-      const leads = [];
-      for (const key of keys) {
-        try {
-          const item = await window.storage.get(key, true);
-          if (item && item.value) leads.push(JSON.parse(item.value));
-        } catch (e) { /* skip unreadable entries */ }
-      }
-      leads.sort(function (a, b) { return new Date(b.submittedAt) - new Date(a.submittedAt); });
-
-      statusEl.textContent = leads.length + ' submission' + (leads.length === 1 ? '' : 's') + ' so far.';
-      listEl.innerHTML = leads.map(function (lead, idx) {
-        const when = new Date(lead.submittedAt).toLocaleString();
-        const answersHtml = (lead.answers || []).map(function (a) {
-          return '<div style="display:flex; justify-content:space-between; gap:10px; padding:4px 0; border-top:1px solid var(--line);">' +
-            '<span style="font-size:12px; color:var(--ink-soft);">' + a.label + '</span>' +
-            '<span style="font-size:12px; font-weight:500; text-align:right;">' + a.answer + '</span>' +
-            '</div>';
-        }).join('');
-        return '<div style="border:1px solid var(--line); border-radius:7px; padding:10px 12px;">' +
-          '<p style="margin:0 0 3px; font-weight:500; font-size:14px;">' + lead.name + '</p>' +
-          '<p style="margin:0 0 3px; font-size:12.5px; color:var(--ink-soft);">' + lead.email + ' · ' + lead.phone + '</p>' +
-          '<p style="margin:0 0 3px; font-size:12.5px; color:var(--sage-dark);">Score ' + lead.scorePercent + '% · ' + lead.tier + '</p>' +
-          '<p style="margin:0 0 6px; font-size:11.5px; color:var(--gray); font-family:\'JetBrains Mono\',monospace;">' + when + '</p>' +
-          (lead.answers ? '<button type="button" class="link" data-toggle="' + idx + '" style="padding:2px 0; font-size:12px;">View answers</button>' +
-          '<div id="answers-' + idx + '" style="display:none; margin-top:6px;">' + answersHtml + '</div>' : '') +
-        '</div>';
-      }).join('');
-
-      listEl.querySelectorAll('[data-toggle]').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          const panel = document.getElementById('answers-' + btn.getAttribute('data-toggle'));
-          const isOpen = panel.style.display === 'block';
-          panel.style.display = isOpen ? 'none' : 'block';
-          btn.textContent = isOpen ? 'View answers' : 'Hide answers';
-        });
-      });
-    } catch (err) {
-      statusEl.textContent = "Couldn't load submissions — try refresh.";
-    }
   }
 
   function renderQuestion() {
@@ -417,10 +403,9 @@
       state.results = results;
 
       try {
-        await saveLeadLocally(lead);
+        await saveToDashboard(lead);
         state.screen = 'reveal';
         render();
-        syncSheetInBackground(lead);
       } catch (err) {
         submitBtn.disabled = false;
         submitBtn.textContent = 'See my results';
@@ -446,59 +431,17 @@
     return { percent: percent, tier: tier, leverCategory: CATEGORIES[worstIdx] };
   }
 
-  async function saveLeadLocally(lead) {
-    const key = 'scorecard-leads:' + lead.id;
-    const result = await window.storage.set(key, JSON.stringify(lead), true);
-    if (!result) throw new Error('storage returned no result');
-    return result;
-  }
-
-  function extractJson(text) {
-    const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
-    const start = cleaned.indexOf('{');
-    const end = cleaned.lastIndexOf('}');
-    if (start === -1 || end === -1) throw new Error('no json found');
-    return JSON.parse(cleaned.slice(start, end + 1));
-  }
-
-  async function syncSheetInBackground(lead) {
-    const dot = document.getElementById('sync-dot');
-    const text = document.getElementById('sync-text');
-    if (dot) { dot.className = 'dot warn'; }
-    if (text) { text.textContent = 'Syncing to Google Sheet…'; }
-
-    try {
-      const answersSummary = lead.answers.map(function (a) { return a.label + ': ' + a.answer; }).join(' | ');
-      const prompt = [
-        'You have access to a Google Drive MCP connector. Do the following:',
-        '1. Search the user\'s Drive for a Google Sheet whose title is exactly "PT Scorecard Leads".',
-        '2. If it exists: read its current content, then create an updated version of the same file (same title "PT Scorecard Leads") whose content is the existing rows plus one new row appended with this lead\'s data: Name = ' + lead.name + ', Email = ' + lead.email + ', Phone = ' + lead.phone + ', Score = ' + lead.scorePercent + '%, Tier = ' + lead.tier + ', Biggest lever = ' + lead.biggestLever + ', Submitted at = ' + lead.submittedAt + ', Answers = ' + answersSummary + '.',
-        '3. If it does not exist: create a new Google Sheet titled exactly "PT Scorecard Leads" with a header row (Name, Email, Phone, Score, Tier, Biggest lever, Submitted at, Answers) followed by this lead as the first data row.',
-        'Respond with ONLY a compact JSON object and nothing else, no code fences, no commentary: {"success": true or false, "action": "created" or "appended" or "none", "message": "short explanation"}'
-      ].join(' ');
-
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 1000,
-          messages: [{ role: 'user', content: prompt }],
-          mcp_servers: [{ type: 'url', url: 'https://drivemcp.googleapis.com/mcp/v1', name: 'google-drive' }]
-        })
-      });
-
-      const data = await response.json();
-      const textBlocks = (data.content || []).filter(function (item) { return item.type === 'text'; }).map(function (item) { return item.text; }).join('\n');
-      const parsed = extractJson(textBlocks);
-      if (!parsed || parsed.success !== true) throw new Error('sync did not confirm success');
-
-      if (dot) dot.className = 'dot ok';
-      if (text) text.textContent = 'Saved';
-    } catch (err) {
-      if (dot) dot.className = 'dot warn';
-      if (text) text.textContent = 'Saved locally';
-    }
+  async function saveToDashboard(lead) {
+    // Store in localStorage so the dashboard can access it
+    const key = 'pt-scorecard-result-' + lead.id;
+    localStorage.setItem(key, JSON.stringify(lead));
+    
+    // Also add to the dashboard's main results list
+    const dashboardKey = 'pt-scorecard-results';
+    const stored = localStorage.getItem(dashboardKey);
+    const results = stored ? JSON.parse(stored) : [];
+    results.unshift(lead);
+    localStorage.setItem(dashboardKey, JSON.stringify(results));
   }
 
   function renderReveal() {
@@ -511,7 +454,7 @@
       '<div class="lever-card"><p class="lever-label">Your biggest lever</p>' +
       '<p class="lever-text"><strong>' + r.leverCategory.label + '.</strong> ' + r.leverCategory.lever + '</p></div>' +
       '<button class="primary" id="cta-btn">Book my free consultation</button>' +
-      '<div class="status-row"><span class="dot ok" id="sync-dot"></span><span id="sync-text">Saved</span></div>';
+      '<div class="status-row"><span class="dot ok" id="sync-dot"></span><span id="sync-text">Results saved</span></div>';
 
     document.getElementById('cta-btn').addEventListener('click', function () {
       alert('Placeholder: swap this for your booking link, email, or SMS action.');
@@ -534,6 +477,25 @@
       requestAnimationFrame(step);
     }
   }
+
+  window.showAdminModal = function() {
+    document.getElementById('admin-modal').classList.add('open');
+  };
+
+  window.closeAdminModal = function() {
+    document.getElementById('admin-modal').classList.remove('open');
+    document.getElementById('admin-code-input').value = '';
+    document.getElementById('admin-error').textContent = '';
+  };
+
+  window.checkAdminCode = function() {
+    const code = document.getElementById('admin-code-input').value;
+    if (code === ADMIN_CODE) {
+      window.location.href = 'dashboard.html';
+    } else {
+      document.getElementById('admin-error').textContent = 'Invalid code. Try again.';
+    }
+  };
 
   render();
 })();
